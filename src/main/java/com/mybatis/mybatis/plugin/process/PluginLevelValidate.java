@@ -70,6 +70,16 @@ public class PluginLevelValidate {
             if (lowerCaseValues.contains(tableName.toLowerCase())) {
                 return true;
             }
+            for (String name :lowerCaseValues ) {
+                if(name.contains("**")){
+                    // 模糊配置
+                  name =  name.replaceAll("\\*\\*", "");
+                 if( name.contains(tableName.toLowerCase())){
+                     return  true;
+                 }
+                }
+            }
+
         } else if (PluginLevelType.databases.equals(level)) {
             Table table = statementInstanceof(statement);
             if (Objects.isNull(table)) {
