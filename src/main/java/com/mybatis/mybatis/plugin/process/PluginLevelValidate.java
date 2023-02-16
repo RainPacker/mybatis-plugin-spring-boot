@@ -74,7 +74,7 @@ public class PluginLevelValidate {
                 if(name.contains("**")){
                     // 模糊配置
                   name =  name.replaceAll("\\*\\*", "");
-                 if( name.contains(tableName.toLowerCase())){
+                 if(tableName.toLowerCase().contains(name) ){
                      return  true;
                  }
                 }
