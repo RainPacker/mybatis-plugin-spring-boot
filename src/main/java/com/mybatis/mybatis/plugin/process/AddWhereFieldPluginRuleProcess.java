@@ -31,6 +31,9 @@ import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -114,7 +117,8 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
      */
 
     private void processUpdate(Update update, String field, String fieldValue) {
-        Table table = update.getTables().get(0);
+       // Table table = update.getTables().get(0);
+        Table table = update.getTable();
         update.setWhere(this.andExpression(table, update.getWhere(), field, fieldValue));
     }
 
@@ -160,8 +164,8 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
     private void processFromItem(FromItem fromItem, String field, String fieldValue) {
         if (fromItem instanceof SubJoin) {
             SubJoin subJoin = (SubJoin) fromItem;
-            if (subJoin.getJoin() != null) {
-                Join join = subJoin.getJoin();
+            if (subJoin.getJoinList() != null) {
+                Join join = subJoin.getJoinList().get(0);
                 processJoin(join, field, fieldValue);
             }
             if (subJoin.getLeft() != null) {
@@ -265,7 +269,10 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
     private void processJoin(Join join, String field, String fieldValue) {
         if (join.getRightItem() instanceof Table) {
             Table fromTable = (Table) join.getRightItem();
-            join.setOnExpression(builderExpression(join.getOnExpression(), fromTable, field, fieldValue));
+            Collection<Expression> expressions = new ArrayList<>();
+            expressions.add(builderExpression(join.getOnExpression(), fromTable, field, fieldValue));
+            join.setOnExpressions(expressions);
+
         }
     }
 

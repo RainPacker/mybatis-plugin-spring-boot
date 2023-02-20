@@ -100,7 +100,8 @@ public class ChangeTableNamePluginRuleProcess implements RulePolicyProcess {
      */
 
     private void processUpdate(Update update, String field, String fieldValue) {
-        Table table = update.getTables().get(0);
+      //  Table table = update.getTables().get(0);
+        Table table = update.getTable();
         update.setWhere(this.andExpression(table, update.getWhere(), field, fieldValue));
     }
 
@@ -146,8 +147,8 @@ public class ChangeTableNamePluginRuleProcess implements RulePolicyProcess {
     private void processFromItem(FromItem fromItem, String field, String fieldValue) {
         if (fromItem instanceof SubJoin) {
             SubJoin subJoin = (SubJoin) fromItem;
-            if (subJoin.getJoin() != null) {
-                Join join = subJoin.getJoin();
+            if (!subJoin.getJoinList().isEmpty()) {
+                Join join = subJoin.getJoinList().get(0);
                 processJoin(join, field, fieldValue);
             }
             if (subJoin.getLeft() != null) {

@@ -105,7 +105,8 @@ public class PluginLevelValidate {
             table = processSelectBody(select);
         } else if (statement instanceof Update) {
             Update update = (Update) statement;
-            table = update.getTables().get(0);
+          //  table = update.getTables().get(0);
+            table = update.getTable();
         } else if (statement instanceof Delete) {
             Delete delete = (Delete) statement;
             table = delete.getTable();
