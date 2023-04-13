@@ -1,5 +1,9 @@
 package com.mybatis.mybatis.plugin.process;
 
+import com.mybatis.mybatis.plugin.config.MybatisPluginsConfig;
+import com.mybatis.mybatis.plugin.config.PluginConfig;
+import com.mybatis.mybatis.plugin.config.PluginLevelType;
+import com.mybatis.mybatis.plugin.utils.SpringContextUtil;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Parenthesis;
@@ -30,11 +34,14 @@ import net.sf.jsqlparser.statement.select.ValuesList;
 import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @program: mybatis plugin
@@ -42,9 +49,13 @@ import java.util.List;
  * @author: lengrongfu
  * @created: 2020/08/15 09:56
  */
+
 public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
 
     private static final Logger logger = LoggerFactory.getLogger(AddWhereFieldPluginRuleProcess.class);
+
+
+
 
     /**
      * @param statement  sql
@@ -140,6 +151,7 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
         FromItem fromItem = plainSelect.getFromItem();
         if (fromItem instanceof Table) {
             Table fromTable = (Table) fromItem;
+
             //#1186 github
             plainSelect.setWhere(builderExpression(plainSelect.getWhere(), fromTable, field, fieldValue));
             if (addColumn) {
@@ -269,11 +281,59 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
     private void processJoin(Join join, String field, String fieldValue) {
         if (join.getRightItem() instanceof Table) {
             Table fromTable = (Table) join.getRightItem();
-            Collection<Expression> expressions = new ArrayList<>();
-            expressions.add(builderExpression(join.getOnExpression(), fromTable, field, fieldValue));
-            join.setOnExpressions(expressions);
+            //验证表 是否要添加租户
+            Boolean validResult = tableNameValid(fromTable.getFullyQualifiedName());
+            if(!validResult){
+                // DO NOTHING
+            }else {
+                Collection<Expression> expressions = new ArrayList<>();
+                expressions.add(builderExpression(join.getOnExpression(), fromTable, field, fieldValue));
+                join.setOnExpressions(expressions);
+            }
+
 
         }
+    }
+
+    private Boolean tableNameValid(String tableName) {
+        logger.debug("连接表名{}", tableName);
+        //获取配置
+      MybatisPluginsConfig  mybatisPluginsConfig = SpringContextUtil.getBean(MybatisPluginsConfig.class);
+      if(null!= mybatisPluginsConfig){
+          List<PluginConfig> plugins = mybatisPluginsConfig.getPlugins();
+          for (PluginConfig plugin : plugins) {
+              PluginLevelType level = plugin.getLevel();
+              List<String> values = plugin.getValue();
+              if (CollectionUtils.isEmpty(values)) {
+                  values = new ArrayList<>();
+              }
+              List<String> lowerCaseValues = values.stream().map(String::toLowerCase).collect(Collectors.toList());
+              if(PluginLevelType.table.equals(level)){
+
+                  if (lowerCaseValues.contains("all")) {
+                      return true;
+                  }
+
+                  if (lowerCaseValues.contains(tableName.toLowerCase())) {
+                      return true;
+                  }
+                  for (String name :lowerCaseValues ) {
+                      if(name.contains("**")){
+                          // 模糊配置
+                          name =  name.replaceAll("\\*\\*", "");
+                          if(tableName.toLowerCase().contains(name) ){
+                              return  true;
+                          }
+                      }
+                  }
+
+              }
+
+          }
+
+      }
+      return  false;
+
     }
 
     private void doExpression(Expression expression, String field, String fieldValue) {

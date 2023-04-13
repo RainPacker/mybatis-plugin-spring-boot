@@ -16,6 +16,7 @@ import com.mybatis.mybatis.plugin.process.field.RuleFieldPolicyProcessImpl;
 import com.mybatis.mybatis.plugin.process.field.RuleFieldValueFailPolicyProcess;
 import com.mybatis.mybatis.plugin.process.field.RuleFieldValuePolicyProcess;
 import com.mybatis.mybatis.plugin.process.field.RuleFieldValuePolicyProcessImpl;
+import com.mybatis.mybatis.plugin.utils.SpringContextUtil;
 import org.apache.ibatis.plugin.Interceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -64,6 +65,14 @@ public class EnablePluginConfig {
     public RuleFieldPolicyProcess fieldPolicyProcess() {
         return new RuleFieldPolicyProcessImpl();
     }
+
+
+    @Bean
+    public SpringContextUtil springContextUtil(){
+        return new SpringContextUtil();
+    }
+
+
 
     @Bean
     public RuleFieldValuePolicyProcess fieldValuePolicyProcess() {
