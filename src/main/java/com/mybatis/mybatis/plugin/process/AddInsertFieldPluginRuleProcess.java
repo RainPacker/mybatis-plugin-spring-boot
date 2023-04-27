@@ -28,7 +28,8 @@ public class AddInsertFieldPluginRuleProcess implements RulePolicyProcess {
         if (insert.getSelect() != null) {
 //            processPlainSelect((PlainSelect) insert.getSelect().getSelectBody(), true,field,fieldValue);
             // TODO insert into select 模式暂不支持
-        } else if (insert.getItemsList() != null) {
+        }
+        if (insert.getItemsList() != null) {
             // fixed github pull/295
             ItemsList itemsList = insert.getItemsList();
             if (itemsList instanceof MultiExpressionList) {

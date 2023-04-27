@@ -81,10 +81,12 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
 
     private void processInsert(Insert insert, String field, String fieldValue) {
         insert.getColumns().add(new Column(field));
+
         if (insert.getSelect() != null) {
 //            processPlainSelect((PlainSelect) insert.getSelect().getSelectBody(), true,field,fieldValue);
             // TODO insert into select 模式暂不支持
-        } else if (insert.getItemsList() != null) {
+        }
+        if (insert.getItemsList() != null) {
             // fixed github pull/295
             ItemsList itemsList = insert.getItemsList();
             if (itemsList instanceof MultiExpressionList) {
