@@ -6,10 +6,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.select.FromItem;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.springframework.util.CollectionUtils;
@@ -117,7 +114,11 @@ public class PluginLevelValidate {
     private Table processSelectBody(SelectBody selectBody) {
         if (selectBody instanceof PlainSelect) {
             FromItem fromItem = ((PlainSelect) selectBody).getFromItem();
-            return (Table) fromItem;
+            if (fromItem instanceof Table) {
+                return (Table) fromItem;
+            }
+            return  processSelectBody(((SubSelect) fromItem).getSelectBody());
+
         }
 //        else if (selectBody instanceof WithItem) {
 //            WithItem withItem = (WithItem) selectBody;
