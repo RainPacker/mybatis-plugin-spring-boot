@@ -36,22 +36,30 @@ public class PluginLevelValidate {
     public Boolean validateLevel(PluginConfig plugin, Statement statement) {
         PluginLevelType level = plugin.getLevel();
         List<String> values = plugin.getValue();
+        List<String> ignoreTables = plugin.getIgnoreTables();
         if (CollectionUtils.isEmpty(values)) {
             values = new ArrayList<>();
         }
+        if (CollectionUtils.isEmpty(ignoreTables)) {
+            ignoreTables = new ArrayList<>();
+        }
         List<String> lowerCaseValues = values.stream().map(String::toLowerCase).collect(Collectors.toList());
-
+        List<String> lowerCaseIgnoreTables = ignoreTables.stream().map(String::toLowerCase).collect(Collectors.toList());
         if (PluginLevelType.dml.equals(level)) {
             if (statement instanceof Insert
+                    && !lowerCaseIgnoreTables.contains(SqlCommandType.INSERT.name().toLowerCase())
                     && lowerCaseValues.contains(SqlCommandType.INSERT.name().toLowerCase())) {
                 return true;
             } else if (statement instanceof Select
+                    && !lowerCaseIgnoreTables.contains(SqlCommandType.SELECT.name().toLowerCase())
                     && lowerCaseValues.contains(SqlCommandType.SELECT.name().toLowerCase())) {
                 return true;
             } else if (statement instanceof Update
+                    && !lowerCaseIgnoreTables.contains(SqlCommandType.UPDATE.name().toLowerCase())
                     && lowerCaseValues.contains(SqlCommandType.UPDATE.name().toLowerCase())) {
                 return true;
             } else if (statement instanceof Delete
+                    && !lowerCaseIgnoreTables.contains(SqlCommandType.DELETE.name().toLowerCase())
                     && lowerCaseValues.contains(SqlCommandType.DELETE.name().toLowerCase())) {
                 return true;
             }
@@ -60,10 +68,14 @@ public class PluginLevelValidate {
             if (Objects.isNull(table)) {
                 return false;
             }
+            String tableName = table.getName();
+            if (lowerCaseIgnoreTables.contains(tableName.toLowerCase())) {
+                //在忽略表集合中，则不再自动添加租户id
+                return false;
+            }
             if (lowerCaseValues.contains("all")) {
                 return true;
             }
-            String tableName = table.getName();
             if (lowerCaseValues.contains(tableName.toLowerCase())) {
                 return true;
             }
@@ -76,7 +88,6 @@ public class PluginLevelValidate {
                  }
                 }
             }
-
         } else if (PluginLevelType.databases.equals(level)) {
             Table table = statementInstanceof(statement);
             if (Objects.isNull(table)) {
@@ -117,8 +128,25 @@ public class PluginLevelValidate {
             if (fromItem instanceof Table) {
                 return (Table) fromItem;
             }
+            //解决子查询无法解析问题：如果是子查询，则递归解析子查询
+            if(fromItem instanceof SubSelect) {
+                return processSelectBody(((SubSelect)fromItem).getSelectBody());
+            }
+
             return  processSelectBody(((SubSelect) fromItem).getSelectBody());
 
+        }
+        //解决union all无法解析问题：如果是union all 解析其中子查询
+        if(selectBody instanceof SetOperationList) {
+            List<SelectBody> selects = ((SetOperationList) selectBody).getSelects();
+            if(selects != null && !selects.isEmpty()) {
+                for(int i = 0; i < selects.size(); i++) {
+                    Table table =  processSelectBody(selects.get(i));
+                    if(table != null) {
+                        return table;
+                    }
+                }
+            }
         }
 //        else if (selectBody instanceof WithItem) {
 //            WithItem withItem = (WithItem) selectBody;

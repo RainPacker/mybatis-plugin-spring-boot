@@ -26,6 +26,9 @@ public class PluginConfig implements Comparable<PluginConfig> {
      * 对应增强级别的值
      */
     private List<String> value;
+
+    private List<String> ignoreTables;
+
     /**
      * 插件规则
      */
@@ -61,6 +64,14 @@ public class PluginConfig implements Comparable<PluginConfig> {
 
     public void setValue(List<String> value) {
         this.value = value;
+    }
+
+    public List<String> getIgnoreTables() {
+        return ignoreTables;
+    }
+
+    public void setIgnoreTables(List<String> ignoreTables) {
+        this.ignoreTables = ignoreTables;
     }
 
     public List<PluginRule> getRules() {

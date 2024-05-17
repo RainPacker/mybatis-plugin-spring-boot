@@ -137,4 +137,18 @@ public class PluginLevelValidateTest {
         assert !validateLevel;
 
     }
+
+    @Test
+    public void validateSelect() throws JSQLParserException {
+        PluginConfig plugin = new PluginConfig();
+        plugin.setLevel(PluginLevelType.table);
+//        plugin.setName("user_table");
+        plugin.setValue(Arrays.asList("sys_role"));
+        Select select = (Select) CCJSqlParserUtil.parse("SELECT DISTINCT r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark FROM sys_role r LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id LEFT JOIN sys_user u ON u.user_id = ur.user_id LEFT JOIN sys_dept d ON u.dept_id = d.dept_id WHERE r.del_flag = '0'");
+        Select select2 = (Select) CCJSqlParserUtil.parse("SELECT count(0) FROM (SELECT DISTINCT r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark FROM sys_role r LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id LEFT JOIN sys_user u ON u.user_id = ur.user_id LEFT JOIN sys_dept d ON u.dept_id = d.dept_id WHERE r.del_flag = '0') table_count");
+        Select select3 = (Select) CCJSqlParserUtil.parse("(SELECT r.role_id,r.role_name,r.role_key,r.role_sort,r.data_scope,r.menu_check_strictly,r.dept_check_strictly,r.STATUS,r.del_flag,r.create_time,r.remark FROM sys_role r WHERE role_id IN (1,2)) UNION ALL (SELECT r.role_id,r.role_name,r.role_key,r.role_sort,r.data_scope,r.menu_check_strictly,r.dept_check_strictly,r.STATUS,r.del_flag,r.create_time,r.remark FROM sys_role r WHERE role_id IN (100,103))");
+
+        Boolean validateLevel = pluginLevelValidate.validateLevel(plugin, select3);
+        assert validateLevel;
+    }
 }

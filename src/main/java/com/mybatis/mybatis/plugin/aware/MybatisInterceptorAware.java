@@ -1,7 +1,12 @@
 package com.mybatis.mybatis.plugin.aware;
 
 import com.mybatis.mybatis.plugin.Filtered;
+import com.mybatis.mybatis.plugin.IgnoreTenant;
 import com.mybatis.mybatis.plugin.process.PluginsProcess;
+import com.mybatis.mybatis.plugin.utils.SqlParserUtil;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -14,6 +19,7 @@ import org.apache.ibatis.reflection.wrapper.DefaultObjectWrapperFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
@@ -31,6 +37,8 @@ public class MybatisInterceptorAware implements InterceptorAware, InterceptorAwa
     public MybatisInterceptorAware(PluginsProcess pluginsProcess) {
         this.pluginsProcess = pluginsProcess;
     }
+
+    final String PAGE_HELP_COUNT = "_COUNT";
 
     @Override
     public void mybatisBeforeExecutor(Invocation invocation) {
@@ -51,22 +59,37 @@ public class MybatisInterceptorAware implements InterceptorAware, InterceptorAwa
             String methedName= namespace.substring(namespace.lastIndexOf(".") + 1,namespace.length());
             Method[] ms = new Method[0];
             try {
-                ms = Class.forName(className).getMethods();
+                Class cls = Class.forName(className);
+
+                Annotation annotation = cls.getAnnotation(IgnoreTenant.class);
+                if (annotation != null){
+                    //如果Mapper类中包含IgnoreTenant注解，则不需要自动添加租户过滤条件
+                    return;
+                }
+                ms = cls.getMethods();
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
             Executor executor = (Executor)invocation.getTarget();
+            if(methedName != null && methedName.endsWith(PAGE_HELP_COUNT)) {
+                //解决分页插件中count与真实查询SQL可能不匹配的问题
+                methedName = methedName.substring(0, methedName.length() - PAGE_HELP_COUNT.length());
+            }
             for(Method m : ms){
                 if(m.getName().equals(methedName)){
-                    Filtered annotation = m.getAnnotation(Filtered.class);
+                    Annotation annotation = m.getAnnotation(IgnoreTenant.class);
                     if (annotation != null){
-                        System.out.println(annotation.toString());
+                        //如果方法中包含IgnoreTenant注解，则不需要自动添加租户过滤条件
+                        return;
                     }
-                };
+                }
             }
 
-
             String sql = boundSql.getSql();
+            // 解析SQL判断where条件中是否包含tenant_id
+            if(SqlParserUtil.whereHasTenantId(sql)) {
+                return;
+            }
 
             if (logger.isDebugEnabled()) {
                 logger.debug("mybatisBeforeExecutor old sql {}", sql);
@@ -135,4 +158,5 @@ public class MybatisInterceptorAware implements InterceptorAware, InterceptorAwa
             return boundSql;
         }
     }
+
 }

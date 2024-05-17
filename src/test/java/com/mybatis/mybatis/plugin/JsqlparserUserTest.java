@@ -1,5 +1,6 @@
 package com.mybatis.mybatis.plugin;
 
+import com.mybatis.mybatis.plugin.utils.SqlParserUtil;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
@@ -10,6 +11,7 @@ import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.Statements;
 import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -115,4 +117,45 @@ public class JsqlparserUserTest {
         Statements statements = CCJSqlParserUtil.parseStatements(sql);
         assert statements.getStatements().size() == 2;
     }
+
+    @Test
+    public void testWhere() {
+        String sql = "select id from sys_user a where a.tenant_id = 1 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.tenant_id <> 1 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id = 2 and a.tenant_id = 1 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id = 2 or a.tenant_id = 1 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.tenant_id in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.tenant_id not in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (1,2) or a.tenant_id in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (1,2) and a.tenant_id in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (1,2) and a.tenant_id between 1 and 2 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (1,2) and exist (select a from b where tenant_id = 1) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (1,2) and a.name between (select id from c where tenant_id =1) and 2 ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a where a.id in (select id from c where tenant_id = 1 ) and a.b in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a left join sys_dept b on a.id = b.id and b.tenant_id = 1 where  a.b in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a left join sys_dept b on a.id = b.id or b.tenant_id = 1 where  a.b in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a left join sys_dept b on a.id = b.id or b.tenant_id between 1 and 2 where  a.b in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select id from sys_user a join sys_dept b on a.id = b.id and exist (select a from b where tenant_id = 1) where  a.b in(1,2) ";
+        assert SqlParserUtil.whereHasTenantId(sql);
+        sql = "select count(0) from (select id from sys_user a where a.id = 1 union all select id from (select id from c where tenant_id = 1) a where a.id = 1) ";
+
+        assert SqlParserUtil.whereHasTenantId(sql);
+    }
+
+
 }
