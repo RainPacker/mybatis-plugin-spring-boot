@@ -12,7 +12,7 @@
     <groupId>com.mybatis</groupId>
     <artifactId>mybatis-plugin-spring-boot</artifactId>
     <version>1.0.1-REALSE</version>
-
+    
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
