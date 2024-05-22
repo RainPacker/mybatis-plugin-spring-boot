@@ -33,6 +33,9 @@ public class ThreadLocalPolicyProcess implements FieldPolicyProcess, FieldValueP
     @Override
     public String processFieldValuePolicy(String value) {
         Object variable = RuleFieldThreadLocal.getVariable(value);
-        return (String) variable;
+        if(variable == null || variable instanceof String) {
+            return (String) variable;
+        }
+        return variable.toString();
     }
 }
