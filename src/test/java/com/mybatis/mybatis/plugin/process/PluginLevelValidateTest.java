@@ -143,12 +143,73 @@ public class PluginLevelValidateTest {
         PluginConfig plugin = new PluginConfig();
         plugin.setLevel(PluginLevelType.table);
 //        plugin.setName("user_table");
-        plugin.setValue(Arrays.asList("sys_role"));
+        plugin.setValue(Arrays.asList("wms_stock_out_task"));
         Select select = (Select) CCJSqlParserUtil.parse("SELECT DISTINCT r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark FROM sys_role r LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id LEFT JOIN sys_user u ON u.user_id = ur.user_id LEFT JOIN sys_dept d ON u.dept_id = d.dept_id WHERE r.del_flag = '0'");
         Select select2 = (Select) CCJSqlParserUtil.parse("SELECT count(0) FROM (SELECT DISTINCT r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark FROM sys_role r LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id LEFT JOIN sys_user u ON u.user_id = ur.user_id LEFT JOIN sys_dept d ON u.dept_id = d.dept_id WHERE r.del_flag = '0') table_count");
         Select select3 = (Select) CCJSqlParserUtil.parse("(SELECT r.role_id,r.role_name,r.role_key,r.role_sort,r.data_scope,r.menu_check_strictly,r.dept_check_strictly,r.STATUS,r.del_flag,r.create_time,r.remark FROM sys_role r WHERE role_id IN (1,2)) UNION ALL (SELECT r.role_id,r.role_name,r.role_key,r.role_sort,r.data_scope,r.menu_check_strictly,r.dept_check_strictly,r.STATUS,r.del_flag,r.create_time,r.remark FROM sys_role r WHERE role_id IN (100,103))");
 
-        Boolean validateLevel = pluginLevelValidate.validateLevel(plugin, select3);
+        String sql = "SELECT\n" +
+                "\tsot.production_order_delivery_no,\n" +
+                "\tsot.task_type,\n" +
+                "\tsot.active_num,\n" +
+                "\tCONCAT(\n" +
+                "\t\tsot.production_order_delivery_no,\n" +
+                "\t\t'-',\n" +
+                "\tIFNULL( sot.active_num, 1 )) multiple_active_no,\n" +
+                "\tsot.is_printed,\n" +
+                "\tpod.plan_commencement_date,\n" +
+                "\tpodd.production_order_no,\n" +
+                "\tsot.location_code,\n" +
+                "\tpodd.work_shop \n" +
+                "FROM\n" +
+                "\twms_stock_out_task sot\n" +
+                "\tLEFT JOIN wms_production_order_detail podd ON podd.id = sot.production_order_detail_id\n" +
+                "\tLEFT JOIN wms_production_order_deliver pod ON pod.id = sot.production_order_delivery_id \n" +
+                "WHERE\n" +
+                "\ttask_type = 1 \n" +
+                "\tAND task_status != 4 \n" +
+                "GROUP BY\n" +
+                "\tproduction_order_delivery_no,\n" +
+                "\tactive_num,\n" +
+                "\tis_printed,\n" +
+                "\ttask_type,\n" +
+                "\tpodd.production_order_no,\n" +
+                "\tlocation_code,\n" +
+                "\tpodd.work_shop,\n" +
+                "\tpod.plan_commencement_date UNION ALL\n" +
+                "SELECT\n" +
+                "\tsot.production_order_delivery_no,\n" +
+                "\tsot.task_type,\n" +
+                "\tsot.active_num,\n" +
+                "\tCONCAT(\n" +
+                "\t\tsot.production_order_delivery_no,\n" +
+                "\t\t'-',\n" +
+                "\tIFNULL( sot.active_num, 1 )) multiple_active_no,\n" +
+                "\tsot.is_printed,\n" +
+                "\tpro.plan_commencement_date,\n" +
+                "\tpro.production_order_no,\n" +
+                "\tsot.location_code,\n" +
+                "\tprod.work_shop \n" +
+                "FROM\n" +
+                "\twms_stock_out_task sot\n" +
+                "\tLEFT JOIN wms_production_replenishment_order_detail prod ON prod.id = sot.production_order_detail_id\n" +
+                "\tLEFT JOIN wms_production_replenishment_order pro ON prod.replenishment_order_no = pro.order_no \n" +
+                "WHERE\n" +
+                "\ttask_type = 2 \n" +
+                "\tAND task_status != 4 \n" +
+                "GROUP BY\n" +
+                "\tproduction_order_delivery_no,\n" +
+                "\tactive_num,\n" +
+                "\tis_printed,\n" +
+                "\ttask_type,\n" +
+                "\tlocation_code,\n" +
+                "\tpro.production_order_no,\n" +
+                "\tprod.work_shop,\n" +
+                "\tpro.plan_commencement_date";
+
+        Select select4 = (Select) CCJSqlParserUtil.parse(sql);
+
+        Boolean validateLevel = pluginLevelValidate.validateLevel(plugin, select4);
         assert validateLevel;
     }
 }

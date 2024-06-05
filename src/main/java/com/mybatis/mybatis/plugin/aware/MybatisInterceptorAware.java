@@ -86,8 +86,8 @@ public class MybatisInterceptorAware implements InterceptorAware, InterceptorAwa
             }
 
             String sql = boundSql.getSql();
-            // 解析SQL判断where条件中是否包含tenant_id
-            if(SqlParserUtil.whereHasTenantId(sql)) {
+            // 解析SQL判断where条件中是否包含tenant_id 或 insert字段中包含了tenant_id
+            if(SqlParserUtil.whereHasTenantId(sql) || SqlParserUtil.insertHasTenantId(sql)) {
                 return;
             }
 

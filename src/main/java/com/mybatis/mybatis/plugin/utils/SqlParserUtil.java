@@ -10,6 +10,7 @@ import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
 
 import java.util.Collection;
@@ -229,6 +230,85 @@ public class SqlParserUtil {
         }
 
         return false;
+    }
+
+    /**
+     * @description: 判断insert语句中是否包含了tenant_id字段
+     * @author shizhiqiang
+     * @date: 2024/6/5 19:37
+     * @param sql
+     * @return boolean
+     */
+    public static boolean insertHasTenantId(String sql) {
+        if(sql == null || !sql.toString().toLowerCase().contains(TENANT_ID)) {
+            return false;
+        }
+        Statement statement = null;
+        try {
+            statement = CCJSqlParserUtil.parse(sql);
+        } catch (JSQLParserException e) {
+            return false;
+        }
+        return insertHasTenantId(statement);
+    }
+
+    /**
+     * @description: 判断insert语句中是否包含了tenant_id字段
+     * @author shizhiqiang
+     * @date: 2024/6/5 19:50
+     * @param statement
+     * @return boolean
+     */
+    public static boolean insertHasTenantId(Statement statement) {
+        if(statement == null || !statement.toString().toLowerCase().contains(TENANT_ID)) {
+            return false;
+        }
+        if(!(statement instanceof Insert)) {
+            return false;
+        }
+        List<Column> columns = ((Insert) statement).getColumns();
+        if(columns != null && !columns.isEmpty()) {
+            return insertHasTenantId(columns);
+        }
+        columns = ((Insert) statement).getSetColumns();
+        if(columns != null && !columns.isEmpty()) {
+            return insertHasTenantId(columns);
+        }
+        return false;
+    }
+
+    /**
+     * @description: 判断insert语句中是否包含了tenant_id字段
+     * @author shizhiqiang
+     * @date: 2024/6/5 20:18
+     * @param columns
+     * @return boolean
+     */
+    public static boolean insertHasTenantId(List<Column> columns) {
+        if(columns == null || columns.isEmpty()) {
+            return false;
+        }
+        for (Column column : columns) {
+            if(TENANT_ID.equalsIgnoreCase(trimColumnName(column.getColumnName()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @description: 防止字段名中加入"或`符号
+     * @author shizhiqiang
+     * @date: 2024/6/5 20:38
+     * @param columnName
+     * @return java.lang.String
+     */
+    private static String trimColumnName(String columnName) {
+        if(columnName.contains("\"") || columnName.contains("`")) {
+            return columnName.replaceAll("`", "")
+                    .replaceAll("\"", "");
+        }
+        return columnName;
     }
 
 }
