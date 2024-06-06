@@ -21,16 +21,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.select.FromItem;
-import net.sf.jsqlparser.statement.select.Join;
-import net.sf.jsqlparser.statement.select.LateralSubSelect;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
-import net.sf.jsqlparser.statement.select.SelectExpressionItem;
-import net.sf.jsqlparser.statement.select.SubJoin;
-import net.sf.jsqlparser.statement.select.SubSelect;
-import net.sf.jsqlparser.statement.select.ValuesList;
+import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,17 +99,19 @@ public class AddWhereFieldPluginRuleProcess implements RulePolicyProcess {
         if (selectBody instanceof PlainSelect) {
             processPlainSelect((PlainSelect) selectBody, false, field, fieldValue);
         }
+        //支持 UNION ALL 场景
+        if (selectBody instanceof SetOperationList) {
+            SetOperationList operationList = (SetOperationList) selectBody;
+            if (operationList.getSelects() != null && operationList.getSelects().size() > 0) {
+                operationList.getSelects().forEach(item -> {
+                    processSelectBody(item, field, fieldValue);
+                });
+            }
+        }
 //        else if (selectBody instanceof WithItem) {
 //            WithItem withItem = (WithItem) selectBody;
 //            if (withItem.getSelectBody() != null) {
 //                processSelectBody(withItem.getSelectBody(), field, fieldValue);
-//            }
-//        } else if (selectBody instanceof SetOperationList) {
-//            SetOperationList operationList = (SetOperationList) selectBody;
-//            if (operationList.getSelects() != null && operationList.getSelects().size() > 0) {
-//                operationList.getSelects().forEach(item -> {
-//                    processSelectBody(item, field, fieldValue);
-//                });
 //            }
 //        } else if (selectBody instanceof ValuesStatement) {
 //            ValuesStatement valuesStatement = (ValuesStatement) selectBody;
