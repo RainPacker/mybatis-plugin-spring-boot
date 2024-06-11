@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.mybatis</groupId>
     <artifactId>mybatis-plugin-spring-boot</artifactId>
-    <version>1.1.1-REALSE</version>
+    <version>1.1.2-REALSE</version>
 
     <dependencies>
         <dependency>
