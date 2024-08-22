@@ -46,7 +46,10 @@ public class PluginsProcessImpl implements PluginsProcess {
             return oldSql;
         }
         List<PluginConfig> plugins = mybatisPluginsConfig.getPlugins();
-        Collections.sort(plugins);
+        synchronized (plugins) {
+            Collections.sort(plugins);
+        }
+
         Statement statement = null;
         try {
             statement = CCJSqlParserUtil.parse(oldSql);
