@@ -56,28 +56,31 @@ public class PluginsProcessImpl implements PluginsProcess {
         } catch (JSQLParserException e) {
             logger.error(e.getLocalizedMessage());
         }
-        for (PluginConfig plugin : plugins) {
-            Boolean pluginConfPass = PluginLevelValidate.DEFAULT.validateLevel(plugin, statement);
-            if (logger.isDebugEnabled()) {
-                logger.info("{} plugin level validate result {}", plugin.getName(), pluginConfPass);
-            }
-            if (!pluginConfPass) {
-                logger.info("{} plugin level validate not pass", plugin.getName());
-                continue;
-            }
-            List<PluginRule> rules = plugin.getRules();
-            synchronized (rules) {
-                Collections.sort(rules);
-            }
-
-
-            for (PluginRule rule : rules) {
+        synchronized (plugins) {
+            for (PluginConfig plugin : plugins) {
+                Boolean pluginConfPass = PluginLevelValidate.DEFAULT.validateLevel(plugin, statement);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("{} plugin {} rule one handler", plugin.getName(), rule.getName());
+                    logger.info("{} plugin level validate result {}", plugin.getName(), pluginConfPass);
                 }
-                ruleProcess.ruleProcess(statement, rule);
+                if (!pluginConfPass) {
+                    logger.info("{} plugin level validate not pass", plugin.getName());
+                    continue;
+                }
+                List<PluginRule> rules = plugin.getRules();
+                synchronized (rules) {
+                    Collections.sort(rules);
+                }
+
+
+                for (PluginRule rule : rules) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("{} plugin {} rule one handler", plugin.getName(), rule.getName());
+                    }
+                    ruleProcess.ruleProcess(statement, rule);
+                }
             }
         }
+
         return statement.toString();
     }
 }
