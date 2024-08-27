@@ -66,7 +66,10 @@ public class PluginsProcessImpl implements PluginsProcess {
                 continue;
             }
             List<PluginRule> rules = plugin.getRules();
-            Collections.sort(rules);
+            synchronized (rules) {
+                Collections.sort(rules);
+            }
+
 
             for (PluginRule rule : rules) {
                 if (logger.isDebugEnabled()) {
